@@ -140,7 +140,7 @@ def get_engine():
     
     # 2. URL-encode the string and use an f-string (notice the 'f' before UID)
     params = urllib.parse.quote_plus(
-        "DRIVER={ODBC Driver 18 for SQL Server};"  
+        "DRIVER={ODBC Driver 17 for SQL Server};"  
         "SERVER=basic-zain-loan.database.windows.net;"
         "DATABASE=free-sql-db-7340985;"
         f"UID=loanuser;PWD={password};" 
