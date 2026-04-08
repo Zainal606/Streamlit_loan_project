@@ -521,61 +521,89 @@ disp['Date'] = pd.to_datetime(disp['Date']).dt.strftime('%d %b %Y')
 st.dataframe(disp, use_container_width=True, hide_index=True)
 
 # ── SIDEBAR ────────────────────────────────────────────────────────────────────
+
+# ── SIDEBAR ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="sidebar-title">New Payment</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-sub">Record a repayment</div>', unsafe_allow_html=True)
+    
+    # 1. Initialize session state to track if the sidebar is unlocked
+    if "unlocked" not in st.session_state:
+        st.session_state["unlocked"] = False
 
-    amount = st.number_input("Amount (₹)", min_value=0.0, step=1000.0, format="%.0f")
-    date   = st.date_input("Payment Date")
-    st.markdown("<br>", unsafe_allow_html=True)
-    submit = st.button("Record Payment")
-
-    if submit:
-        cursor.execute("SELECT current_balance, last_payment_date, total_interest, total_paid FROM LoanSummary WHERE id=1")
-        row = cursor.fetchone()
-        bal, last_date, t_int, t_paid = float(row[0]), row[1], float(row[2]), float(row[3])
-
-        if date > today:       st.error("Date cannot be in the future."); st.stop()
-        if date <= last_date:  st.error("Date must be after last payment date."); st.stop()
-
-        days     = (date - last_date).days
+    # 2. If locked, show the password input
+    if not st.session_state["unlocked"]:
+        st.markdown('<div class="sidebar-sub">Admin Access Required</div>', unsafe_allow_html=True)
+        pwd = st.text_input("Enter password to add records", type="password")
         
-        # Calculate raw interest, then round to the nearest whole rupee
-        raw_int  = bal * daily_rate * days
-        int_amt  = round(raw_int, 0) 
+        if st.button("Unlock"):
+            if pwd == st.secrets["APP_PASSWORD"]:
+                st.session_state["unlocked"] = True
+                st.rerun()
+            else:
+                st.error("Incorrect password")
+                
+    # 3. If unlocked, show the actual payment form
+    else:
+        st.markdown('<div class="sidebar-sub">Record a repayment</div>', unsafe_allow_html=True)
         
-        princ_p  = max(0.0, amount - int_amt)
-        new_bal  = bal - princ_p
+        amount = st.number_input("Amount (₹)", min_value=0.0, step=1000.0, format="%.0f")
+        date   = st.date_input("Payment Date")
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            submit = st.button("Record Payment")
+        with c2:
+            # Add a button to let you re-lock the sidebar when you're done
+            if st.button("🔒"):
+                st.session_state["unlocked"] = False
+                st.rerun()
 
-        if int_amt > amount: st.warning("Payment less than interest — balance will increase.")
+        if submit:
+            cursor.execute("SELECT current_balance, last_payment_date, total_interest, total_paid FROM LoanSummary WHERE id=1")
+            row = cursor.fetchone()
+            bal, last_date, t_int, t_paid = float(row[0]), row[1], float(row[2]), float(row[3])
 
-        cursor.execute(
-            "INSERT INTO Payments (payment_date, amount, interest_paid, principal_paid, balance_after) VALUES (?,?,?,?,?)",
-            date, amount, int_amt, princ_p, new_bal)
-        cursor.execute(
-            "UPDATE LoanSummary SET current_balance=?, total_paid=?, total_interest=?, last_payment_date=? WHERE id=1",
-            new_bal, t_paid + amount, t_int + int_amt, date)
-        conn.commit()
-        st.success("Payment recorded.")
+            if date > today:       st.error("Date cannot be in the future."); st.stop()
+            if date <= last_date:  st.error("Date must be after last payment date."); st.stop()
 
+            days     = (date - last_date).days
+            
+            raw_int  = bal * daily_rate * days
+            int_amt  = round(raw_int, 0) 
+            
+            princ_p  = max(0.0, amount - int_amt)
+            new_bal  = bal - princ_p
+
+            if int_amt > amount: st.warning("Payment less than interest — balance will increase.")
+
+            cursor.execute(
+                "INSERT INTO Payments (payment_date, amount, interest_paid, principal_paid, balance_after) VALUES (?,?,?,?,?)",
+                date, amount, int_amt, princ_p, new_bal)
+            cursor.execute(
+                "UPDATE LoanSummary SET current_balance=?, total_paid=?, total_interest=?, last_payment_date=? WHERE id=1",
+                new_bal, t_paid + amount, t_int + int_amt, date)
+            conn.commit()
+            st.success("Payment recorded.")
+
+            st.markdown(f"""
+            <div style='margin-top:1rem;padding:1.1rem 1.2rem;background:#0c1118;border:1px solid #1a2235;border-radius:4px;font-size:.9rem;line-height:2.2;'>
+              <div style='color:#8a9ab0;letter-spacing:.15em;font-size:.75rem;text-transform:uppercase;margin-bottom:.6rem;'>Breakdown</div>
+              Days elapsed <span style='float:right;color:#c9a96e'>{days}</span><br>
+              Interest charged <span style='float:right;color:#c9a96e'>₹{int_amt:,.0f}</span><br>
+              Principal paid <span style='float:right;color:#c9a96e'>₹{princ_p:,.0f}</span><br>
+              New balance <span style='float:right;color:#e8dcc8'>₹{new_bal:,.0f}</span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.rerun()
+
+        st.markdown("<br><hr style='border-color:#1a2235;margin:1.5rem 0'>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div style='margin-top:1rem;padding:1.1rem 1.2rem;background:#0c1118;border:1px solid #1a2235;border-radius:4px;font-size:.9rem;line-height:2.2;'>
-          <div style='color:#8a9ab0;letter-spacing:.15em;font-size:.75rem;text-transform:uppercase;margin-bottom:.6rem;'>Breakdown</div>
-          Days elapsed <span style='float:right;color:#c9a96e'>{days}</span><br>
-          Interest charged <span style='float:right;color:#c9a96e'>₹{int_amt:,.0f}</span><br>
-          Principal paid <span style='float:right;color:#c9a96e'>₹{princ_p:,.0f}</span><br>
-          New balance <span style='float:right;color:#e8dcc8'>₹{new_bal:,.0f}</span>
+        <div style='font-size:.82rem;letter-spacing:.15em;text-transform:uppercase;color:#8a9ab0;margin-bottom:1rem;'>Loan Parameters</div>
+        <div style='font-size:.92rem;line-height:2.5;color:#8a9ab0;'>
+          Interest Rate <span style='float:right;color:#c9a96e'>11.5% p.a.</span><br>
+          Daily Rate <span style='float:right;color:#c9d1d9'>{daily_rate*100:.4f}%</span><br>
+          Calculation <span style='float:right;color:#c9d1d9'>Daily Reducing</span><br>
+          Cost per ₹1L/day <span style='float:right;color:#c9a96e'>₹{cost_per_lakh:,.0f}</span>
         </div>
         """, unsafe_allow_html=True)
-        st.rerun()
-
-    st.markdown("<br><hr style='border-color:#1a2235;margin:1.5rem 0'>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div style='font-size:.82rem;letter-spacing:.15em;text-transform:uppercase;color:#8a9ab0;margin-bottom:1rem;'>Loan Parameters</div>
-    <div style='font-size:.92rem;line-height:2.5;color:#8a9ab0;'>
-      Interest Rate <span style='float:right;color:#c9a96e'>11.5% p.a.</span><br>
-      Daily Rate <span style='float:right;color:#c9d1d9'>{daily_rate*100:.4f}%</span><br>
-      Calculation <span style='float:right;color:#c9d1d9'>Daily Reducing</span><br>
-      Cost per ₹1L/day <span style='float:right;color:#c9a96e'>₹{cost_per_lakh:,.0f}</span>
-    </div>
-    """, unsafe_allow_html=True)
