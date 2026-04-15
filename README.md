@@ -22,7 +22,7 @@
 > Tip: drag and drop images directly into a GitHub issue, copy the URL, paste it below.
 
 ```
-![Dashboard Overview](screenshots/dashboard.png)
+![Dashboard Overview](https://github.com/Zainal606/Streamlit_loan_project/blob/main/screenshots/dashboard.png)
 ![Loan Progress](screenshots/progress.png)
 ![3 Scenarios](screenshots/scenarios.png)
 ![Forecast Chart](screenshots/forecast.png)
