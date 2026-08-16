@@ -1,11 +1,11 @@
-# 💰 Loan Tracker
+# Cloud Application & Loan Intelligence Dashboard
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://apploanproject-yzdbzw6gid9bwul2upareu.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Azure SQL](https://img.shields.io/badge/Azure%20SQL-Database-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Cloud-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 
-> A personal loan intelligence dashboard — real-time amortization, payoff forecasting, and financial insights. Built after giving my loan details to Claude and being stunned by what I didn't know about my own money.
+> A cloud-hosted Python application using Streamlit and Azure SQL, demonstrating managed database connectivity, cloud deployment, data visualization, and secure configuration. The application provides loan tracking, amortization forecasting, payment analysis, and interactive financial dashboards.
 
 ---
 
@@ -24,6 +24,47 @@
 ![3 Scenarios](screenshots/scenarios.png)
 ![Forecast Chart](screenshots/forecast.png)
 
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend / UI | Streamlit |
+| Charts | Plotly |
+| Backend logic | Python 3.11 |
+| Database | Azure SQL (free serverless tier) |
+| DB connector | pyodbc |
+| Hosting | Streamlit Cloud (free tier) |
+| Data processing | Pandas |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────┐     HTTPS      ┌──────────────────────────────────────┐
+│   Browser   │ ─────────────► │          Streamlit Cloud             │
+│ (any device)│                │  ┌────────────────────────────────┐  │
+└─────────────┘                │  │        Python App              │  │
+                               │  │  ┌──────────┐  ┌───────────┐   │  │
+                               │  │  │Streamlit │  │  Business │   │  │
+                               │  │  │    UI    │  │   Logic   │   │  │
+                               │  │  └──────────┘  └─────┬─────┘   │  │
+                               │  │  ┌──────────┐        │pyodbc   │  │
+                               │  │  │  Plotly  │        │         │  │
+                               │  │  │  Charts  │        │         │  │
+                               │  │  └──────────┘        │         │  │
+                               │  └────────────────────────────────┘  │
+                               └──────────────────────┬───────────────┘
+                                                      │
+                                                      ▼
+                               ┌──────────────────────────────────────┐
+                               │            Azure SQL                 │
+                               │   LoanSummary  │  Payments           │
+                               └──────────────────────────────────────┘
+```
 
 ---
 
@@ -57,33 +98,6 @@
 
 ---
 
-## 🏗️ Architecture
-
-```
-┌─────────────┐     HTTPS      ┌──────────────────────────────────────┐
-│   Browser   │ ─────────────► │          Streamlit Cloud             │
-│ (any device)│                │  ┌────────────────────────────────┐  │
-└─────────────┘                │  │        Python App              │  │
-                               │  │  ┌──────────┐  ┌───────────┐   │  │
-                               │  │  │Streamlit │  │  Business │   │  │
-                               │  │  │    UI    │  │   Logic   │   │  │
-                               │  │  └──────────┘  └─────┬─────┘   │  │
-                               │  │  ┌──────────┐        │pyodbc   │  │
-                               │  │  │  Plotly  │        │         │  │
-                               │  │  │  Charts  │        │         │  │
-                               │  │  └──────────┘        │         │  │
-                               │  └────────────────────────────────┘  │
-                               └──────────────────────┬───────────────┘
-                                                      │
-                                                      ▼
-                               ┌──────────────────────────────────────┐
-                               │            Azure SQL                 │
-                               │   LoanSummary  │  Payments           │
-                               └──────────────────────────────────────┘
-```
-
----
-
 ## 🗄️ Database Schema
 
 ### `LoanSummary` (1 row — current state)
@@ -109,21 +123,6 @@ interest = balance × (annual_rate / 365) × days_since_last_payment
 principal_paid = payment_amount - interest
 new_balance = balance - principal_paid
 ```
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend / UI | Streamlit |
-| Charts | Plotly |
-| Backend logic | Python 3.11 |
-| Database | Azure SQL (free serverless tier) |
-| DB connector | pyodbc |
-| Hosting | Streamlit Cloud (free tier) |
-| Data processing | Pandas |
-
 ---
 
 ## 🚀 Run Locally
