@@ -217,7 +217,7 @@ loan-tracker/
 
 ---
 
-## 🧭 What I Learned
+## 🧭 Engineering & Operational Lessons
 
 This project started when I gave my loan details to Claude and was surprised by how little I understood about my own finances. Building it taught me:
 
